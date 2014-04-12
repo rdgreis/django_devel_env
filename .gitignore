@@ -16,6 +16,7 @@ local.properties
 .settings/
 .loadpath
 .idea/*
+.vagrant/*
 
 # External tool builders
 .externalToolBuilders/
