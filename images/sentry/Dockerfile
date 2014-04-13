@@ -31,9 +31,11 @@ RUN pip install MySQL-python
 
 EXPOSE 9000
 
-ADD sentry.conf.py /sentry.conf.py
 ADD admin_user.json /initial_data.json
 
-ENTRYPOINT ["/usr/local/bin/sentry", "--config=/sentry.conf.py"]
+RUN mkdir /etc-sentry
+ADD sentry.conf.py /etc-sentry/sentry.conf.py
+
+#ENTRYPOINT ["/usr/local/bin/sentry", "--config=/sentry.conf.py"]
 
 CMD ["start"]
