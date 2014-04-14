@@ -2,6 +2,7 @@
 ## Eclipse
 #################
 
+django_project/*
 *.pydevproject
 .project
 .metadata
