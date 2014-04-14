@@ -43,9 +43,11 @@ start(){
 
 	mkdir -p $APPS/mysql/data
 	mkdir -p $APPS/mysql/logs
+	sudo chmod 777 -R $APPS/mysql/data
 	MYSQL=$(docker run \
 		-p 3306:3306 \
 		-v $APPS/mysql/data:/var/lib/mysql \
+		-v $APPS/mysql/logs:/logs \
 		--name="devenv_MYSQL" \
 		-e MYSQL_PASS="vagrant" \
 		-d \
@@ -53,18 +55,40 @@ start(){
 	echo "Started MYSQL in container $MYSQL"
 
     mkdir -p $APPS/sentry/etc
+    while netstat -lnt | awk '$4 ~ /:3306$/ {exit 1}'; do sleep 1; done
+    sleep 1
+    echo "CREATE DATABASE IF NOT EXISTS devenv_SENTRY;" \
+    | mysql -uadmin -pvagrant --protocol=TCP
+
 	SENTRY=$(docker run \
 		-p 9000:9000 \
 		-e "SENTRY_NAME=devenv_SENTRY" \
-		-e "SENTRY_USER=root" \
+		-e "SENTRY_USER=admin" \
 		-e "SENTRY_PASS=vagrant" \
 		-e "SENTRY_ENGINE=mysql" \
+		-e "SENTRY_URL_PREFIX=http://localhost:9000" \
 		-v $APPS/sentry/etc:/etc-sentry \
 		--name="devenv_SENTRY" \
 		--link devenv_MYSQL:db \
 		-d \
 		rdgreis/sentry)
 	echo "Started SENTRY in container $SENTRY"
+	while netstat -lnt | awk '$4 ~ /:9000$/ {exit 1}'; do sleep 1; done
+	sleep 1
+	echo "delete from auth_user where id=1;" \
+    | mysql -uadmin -pvagrant -Ddevenv_SENTRY --protocol=TCP
+    echo "insert into auth_user(id,
+                                username,
+                                email,
+                                password,
+                                is_staff,
+                                is_active,
+                                is_superuser)
+                                values (1,
+                                'admin',
+                                'root@root.com',
+                                'pbkdf2_sha256$10000$4mazdeya2WoA$7M/RIM7qHRoQyxpTxiFS0q6xfyG9yZHiHDWHGnbskrQ=',1,1,1);" \
+    | mysql -uadmin -pvagrant -Ddevenv_SENTRY --protocol=TCP
 
 	#SHIPYARD=$(docker run \
 	#	-p 8005:8000 \
@@ -77,14 +101,29 @@ start(){
 
 setup-mysql(){
     mkdir -p $APPS/mysql/data
+    sudo chmod 777 -R $APPS/mysql/data
 	MYSQL=$(docker run \
 		-p 3306:3306 \
 		-v $APPS/mysql/data:/var/lib/mysql \
+        -v $APPS/mysql/logs:/logs \
 		-e MYSQL_PASS="vagrant" \
-		-d \
+		--rm \
 		rdgreis/mysql \
 		/bin/bash -c "/usr/bin/mysql_install_db")
-	echo "Setting up MYSQL data."
+
+    echo "Setting up MYSQL data."
+	sleep 1
+
+	MYSQL=$(docker run \
+		-p 3306:3306 \
+		-v $APPS/mysql/data:/var/lib/mysql \
+        -v $APPS/mysql/logs:/logs \
+		-e MYSQL_PASS="vagrant" \
+		--rm \
+		rdgreis/mysql \
+		/bin/bash -c /create_mysql_admin_user.sh )
+
+	echo "Setting up MYSQL admin user."
 	sleep 1
 }
 
@@ -95,8 +134,8 @@ update(){
 
 	docker pull rdgreis/redis
 	docker pull rdgreis/memcached
-	docker pull rdgreis/sentry
 	docker pull rdgreis/mysql
+	docker pull rdgreis/sentry
 	#docker pull shipyard/shipyard
 }
 

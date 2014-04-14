@@ -1,11 +1,10 @@
-Django Development Enviroment
+Django Development Environment
 =============================
 
 My default Django development stack for Vagrant+docker.
 
 
-
-Inspired, based, forked from:
+Inspired, based and forked from:
 * [docker_public](https://github.com/relateiq/docker_public)
 * [docker-sentry](https://github.com/grue/docker-sentry)
 * [tutum-docker-mysql](https://github.com/tutumcloud/tutum-docker-mysql)
@@ -16,7 +15,7 @@ Installation:
 
 Download and install [VirtualBox](http://www.virtualbox.org/)
 
-Download and install [vagrant](http://vagrantup.com/)
+Download and install [Vagrant](http://vagrantup.com/)
 
 Clone this repository
 
